@@ -8,8 +8,6 @@ OUTPUTDIR=$(BASEDIR)/output
 CONFFILE=$(BASEDIR)/pelicanconf.py
 PUBLISHCONF=$(BASEDIR)/publishconf.py
 
-EDITOR=vi
-
 FTP_HOST=localhost
 FTP_USER=anonymous
 FTP_TARGET_DIR=/
@@ -28,52 +26,6 @@ CLOUDFILES_CONTAINER=my_cloudfiles_container
 DROPBOX_DIR=~/Dropbox/Public/
 
 GITHUB_PAGES_BRANCH=master
-
-PAGESDIR=$(INPUTDIR)/pages
-DATE := $(shell date +'%Y-%m-%d %H:%M:%S')
-SLUG := $(shell echo '${NAME}' | sed -e 's/[^[:alnum:]]/-/g' | tr -s '-' | tr A-Z a-z)
-EXT ?= md
-
-newpost:
-ifdef NAME
-	echo "Title: $(NAME)" > $(INPUTDIR)/$(SLUG).$(EXT)
-	echo "Slug: $(SLUG)" >> $(INPUTDIR)/$(SLUG).$(EXT)
-	echo "Date: $(DATE)" >> $(INPUTDIR)/$(SLUG).$(EXT)
-	echo ""              >> $(INPUTDIR)/$(SLUG).$(EXT)
-	echo ""              >> $(INPUTDIR)/$(SLUG).$(EXT)
-	${EDITOR} ${INPUTDIR}/${SLUG}.${EXT} &
-else
-	@echo 'Variable NAME is not defined.'
-	@echo 'Do make newpost NAME='"'"'Post Name'"'"
-endif
-
-editpost:
-ifdef NAME
-	${EDITOR} ${INPUTDIR}/${SLUG}.${EXT} &
-else
-	@echo 'Variable NAME is not defined.'
-	@echo 'Do make editpost NAME='"'"'Post Name'"'"
-endif
-
-newpage:
-ifdef NAME
-	echo "Title: $(NAME)" >  $(PAGESDIR)/$(SLUG).$(EXT)
-	echo "Slug: $(SLUG)" >> $(PAGESDIR)/$(SLUG).$(EXT)
-	echo ""              >> $(PAGESDIR)/$(SLUG).$(EXT)
-	echo ""              >> $(PAGESDIR)/$(SLUG).$(EXT)
-	${EDITOR} ${PAGESDIR}/${SLUG}.$(EXT)
-else
-	@echo 'Variable NAME is not defined.'
-	@echo 'Do make newpage NAME='"'"'Page Name'"'"
-endif
-
-editpage:
-ifdef NAME
-	${EDITOR} ${PAGESDIR}/${SLUG}.$(EXT)
-else
-	@echo 'Variable NAME is not defined.'
-	@echo 'Do make editpage NAME='"'"'Page Name'"'"
-endif
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -160,7 +112,7 @@ ftp_upload: publish
 	lftp ftp://$(FTP_USER)@$(FTP_HOST) -e "mirror -R $(OUTPUTDIR) $(FTP_TARGET_DIR) ; quit"
 
 s3_upload: publish
-	s3cmd sync $(OUTPUTDIR)/ s3://$(S3_BUCKET) --acl-public --delete-removed --guess-mime-type
+	s3cmd sync $(OUTPUTDIR)/ s3://$(S3_BUCKET) --acl-public --delete-removed --guess-mime-type --no-mime-magic --no-preserve
 
 cf_upload: publish
 	cd $(OUTPUTDIR) && swift -v -A https://auth.api.rackspacecloud.com/v1.0 -U $(CLOUDFILES_USERNAME) -K $(CLOUDFILES_API_KEY) upload -c $(CLOUDFILES_CONTAINER) .
@@ -169,4 +121,4 @@ github: publish
 	ghp-import -m "Generate Pelican site" -b $(GITHUB_PAGES_BRANCH) $(OUTPUTDIR)
 	git push origin $(GITHUB_PAGES_BRANCH)
 
-.PHONY: html help clean regenerate serve serve-global devserver publish ssh_upload rsync_upload dropbox_upload ftp_upload s3_upload cf_upload github
+.PHONY: html help clean regenerate serve serve-global devserver stopserver publish ssh_upload rsync_upload dropbox_upload ftp_upload s3_upload cf_upload github
